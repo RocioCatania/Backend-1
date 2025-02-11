@@ -15,3 +15,11 @@ socket.on("realtimeproducts",data => {
         </div>`;
     });
 })
+
+const agregarProducto = () => {
+    console.log("agregar producto")
+};
+
+const eliminarProducto = () => {
+    console.log("eliminar producto")
+};
