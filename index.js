@@ -9,7 +9,6 @@ import { uploader } from './utils.js';
 import { Server as socketIo } from 'socket.io';
 import http from 'http';
 
-
 const app = express();
 const port = 8080;
 
@@ -30,34 +29,55 @@ app.post('/upload', uploader.single('image'), (req, res) => {
   res.send({ message: 'Archivo subido correctamente', file: req.file });
 });
 
-const httpServer = app.listen(port, () => {
-  console.log("Servidor activo en el puerto " + port);
-});
-
-
 const server = http.createServer(app);
-
 const socketServer = new socketIo(server);
 
-socketServer.on('connection', (socket) => {
-  console.log('Nuevo cliente conectado');
+socketServer.on('connection', socket => {
   
-  
-  socket.on('disconnect', () => {
-    console.log('Cliente desconectado');
+  socket.emit("realtimeproducts", getProductsFromFile());
+
+  socket.on("nuevoProducto", data => {
+    const { title, description, code, price, stock, category, thumbnails } = data;
+
+    if (!title || !description || !code || !price || !stock || !category) {
+      return socket.emit("error", { error: "Todos los campos son obligatorios" });
+    }
+
+    const productos = getProductsFromFile();
+    
+    const producto = {
+      id: productos.length + 1,
+      title,
+      description,
+      code,
+      price,
+      status: true,
+      stock,
+      category,
+      thumbnails: thumbnails || []  
+    };
+
+    productos.push(producto);
+    saveProductsToFile(productos);  
+
+    socket.emit("realtimeproducts", productos);
+    socket.broadcast.emit("realtimeproducts", productos);  
   });
 });
 
-app.use('/api/products', products);
+const getProductsFromFile = () => {
+  try {
+    const data = fs.readFileSync('products.json', 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    return [];
+  }
+};
+
+const saveProductsToFile = (productos) => {
+  fs.writeFileSync('products.json', JSON.stringify(productos, null, 2), 'utf-8');
+};
 
 server.listen(port, () => {
   console.log(`Servidor corriendo en el puerto ${port}`);
 });
-
-
-
-socketServer.on ("connection", socket => {
-
-
-    socket.emit("realtimeproducts", products)
-})
