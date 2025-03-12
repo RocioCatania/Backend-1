@@ -6,9 +6,11 @@ import __dirname from "./utils.js";
 import viewsRouter from "./src/router/viewRoutes.js";
 import handlebars from 'express-handlebars';
 import ProductManager from "./src/classes/productManager.js";
+import mongoose from "mongoose";
+
 
 const app = express();
-const port = 8080;
+const port = 3030;
 const httpServer = app.listen(port, () => {
   console.log("Servidor activo: " + port);
 })
@@ -24,26 +26,30 @@ app.use("/", viewsRouter);
 app.use("/api/products", products);
 app.use("/api/carts", carts);
 
+mongoose.connect("mongodb+srv://Rocio:Rocio36404752.@cluster0.a02ls.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+console.log("conectado al Mongoose");
+
 const PM = new ProductManager();
 
 
-socketServer.on("connection", socket => {
-  const products = PM.getProducts();
-  console.log(products);
+socketServer.on("connection", async socket => {
+  const products = await PM.getProducts();
   socket.emit("realtimeproducts", products);
 
-  socket.on("nuevoProducto", data => {
+  socket.on("nuevoProducto", async data => {
+
       const product = {title:data.title, description:data.description, code:data.code, price:data.price, category:data.category, thumbnails:[data.image]};
-      PM.addProduct(product);
+      await PM.addProduct(product);
       console.log("Se agregó un nuevo Producto!");
-      const products = PM.getProducts();
+      const products = await PM.getProducts();
       socket.emit("realtimeproducts", products);
   })
 
-  socket.on("eliminarProducto", data => {
-      PM.deleteProduct(data);
+  socket.on("eliminarProducto", async data => {
+      await PM.deleteProduct(data);
       console.log("Se eliminó un Producto!");
-      const products = PM.getProducts();
+      const products =await PM.getProducts();
       socket.emit("realtimeproducts", products);
   })
 })
+

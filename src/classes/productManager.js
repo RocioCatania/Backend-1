@@ -1,73 +1,76 @@
-import fs from "fs"
+import {productsModels}  from "../models/products.models.js";
+import mongoose from "mongoose";
+
 
 class ProductManager {
     constructor() {
-        this.products = [],
-        this.file = "productos.json",
-        this.createFile()
+        this.products = []
+
     }
 
-    createFile() {
-        if (!fs.existsSync(this.file)) {
-            fs.writeFileSync(this.file, JSON.stringify(this.products))
-        }
+    async getProducts() {
+
+        return await productsModels.find().lean();
     }
 
-    getId() {
-        this.getProducts();
-        let max = 0;
 
-        this.products.forEach(item => {
-            if (item.id > max) {
-                max = item.id;
-            }
-        })
-
-        return max + 1;
-    }
-
-    getProducts() {
-        this.products = JSON.parse(fs.readFileSync(this.file, "utf-8"));
-        
-        return this.products;
-    }
-
-    getProductById(id) {        
-        this.getProducts();
-        let product = this.products.find(item => item.id == id);
-        
+    async getProductById(id) {        
+        let product = await productsModels.find({_id:id});
+        console.log(products);
         return product ? product : {"error":"No se encontró el Producto!"};
     }
+    
+    async addProduct(product) {
 
-    addProduct(product) {
-        this.getProducts();
-        let newProduct = {id:this.getId(), ...product};
-        this.products.push(newProduct);
-        this.saveProducts();
+        await productsModels.create({...product});
     }
 
-    editProduct(id, product) {
-        this.getProducts();
-        let actualProduct = this.products.find(item => item.id == id);
-        actualProduct.title = product.title;
-        actualProduct.description = product.description;
-        actualProduct.code = product.code;
-        actualProduct.price = product.price;
-        actualProduct.status = product.status;
-        actualProduct.category = product.category;
-        actualProduct.thumbnails = product.thumbnails;
-        this.saveProducts();
+    async editProduct(id, product) {
+        await productsModels.updateOne({_id:id}, {...product});
+
     }
 
-    deleteProduct(id) {
-        this.getProducts();
-        this.products = this.products.filter(item => item.id != id);
-        this.saveProducts();
+    // async deleteProduct(id) {
+        
+    //     await productsModels.deleteOne({_id:id});
+    // }
+
+    async deleteProduct(id) {
+        console.log('ID recibido para eliminación:', id); // 🔍 Verificar qué valor llega
+    
+        if (!id || id === "undefined" || !mongoose.Types.ObjectId.isValid(id)) {
+            console.error("ID inválido para eliminación:", id);
+            return { error: "ID inválido para eliminación!" };
+        }
+    
+        try {
+            const result = await productsModels.deleteOne({ _id: id });
+            return result.deletedCount > 0 
+                ? { message: "Producto eliminado" } 
+                : { error: "Producto no encontrado" };
+        } catch (error) {
+            console.error(error);
+            return { error: "Hubo un problema al eliminar el producto." };
+        }
+    }async deleteProduct(id) {
+    console.log('ID recibido para eliminación:', id); // 🔍 Verificar qué valor llega
+
+    if (!id || id === "undefined" || !mongoose.Types.ObjectId.isValid(id)) {
+        console.error("ID inválido para eliminación:", id);
+        return { error: "ID inválido para eliminación!" };
     }
 
-    saveProducts() {
-        fs.writeFileSync(this.file, JSON.stringify(this.products));
+    try {
+        const result = await productsModels.deleteOne({ _id: id });
+        return result.deletedCount > 0 
+            ? { message: "Producto eliminado" } 
+            : { error: "Producto no encontrado" };
+    } catch (error) {
+        console.error(error);
+        return { error: "Hubo un problema al eliminar el producto." };
     }
 }
 
-export default ProductManager
+}
+
+export default ProductManager;
