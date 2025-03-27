@@ -10,8 +10,8 @@ import mongoose from "mongoose";
 
 
 const app = express();
-const port = 3030;
-const httpServer = app.listen(port, () => {
+const port = 8080;
+const httpServer = app.listen(port, "0.0.0.0",() => {
   console.log("Servidor activo: " + port);
 })
 const socketServer = new Server(httpServer);
@@ -27,7 +27,8 @@ app.use("/api/products", products);
 app.use("/api/carts", carts);
 
 mongoose.connect("mongodb+srv://Rocio:Rocio36404752.@cluster0.a02ls.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-console.log("conectado al Mongoose");
+.then(() => console.log("✅ Conectado a MongoDB Atlas"))
+.catch(err => console.error("❌ Error al conectar a MongoDB:", err));
 
 const PM = new ProductManager();
 

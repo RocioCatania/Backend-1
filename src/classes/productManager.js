@@ -3,20 +3,34 @@ import mongoose from "mongoose";
 
 
 class ProductManager {
-    constructor() {
-        this.products = []
 
-    }
 
-    async getProducts() {
+    async getProducts(limit, page, query, sort) {
+        try {
+            limit = limit ? limit : 10;
+            page = page >= 1 ? page : 1;
+            query = query ? query : "";
+            sort = sort ? sort : "asc";
+            let result;            
+    
+            if (query) {            
+                result = await productsModels.paginate({category:query}, {limit:limit, page:page, sort:sort, lean:true});
+            } else {                
+                result = await productsModels.paginate({}, {limit:limit, page:page, sort:sort, lean:true});
+            }
 
-        return await productsModels.find().lean();
+            result = {status:"success", payload:result.docs, totalPages:result.totalPages, prevPage:result.prevPage, nextPage:result.nextPage, page:result.page, hasPrevPage:result.hasPrevPage, hasNextPage:result.hasNextPage, prevLink:(result.hasPrevPage ? "/?limit=" + limit + "&page=" + (result.page-1) : null), nextLink:(result.hasNextPage ? "/?limit=" + limit + "&page=" + (result.page+1) : null)};
+    
+            return result;
+        } catch (error) {
+            return {status:"error", payload:""}
+        }
     }
 
 
     async getProductById(id) {        
         let product = await productsModels.find({_id:id});
-        console.log(products);
+        
         return product ? product : {"error":"No se encontró el Producto!"};
     }
     
@@ -30,13 +44,9 @@ class ProductManager {
 
     }
 
-    // async deleteProduct(id) {
-        
-    //     await productsModels.deleteOne({_id:id});
-    // }
 
     async deleteProduct(id) {
-        console.log('ID recibido para eliminación:', id); // 🔍 Verificar qué valor llega
+        console.log('ID recibido para eliminación:', id);
     
         if (!id || id === "undefined" || !mongoose.Types.ObjectId.isValid(id)) {
             console.error("ID inválido para eliminación:", id);
@@ -53,7 +63,7 @@ class ProductManager {
             return { error: "Hubo un problema al eliminar el producto." };
         }
     }async deleteProduct(id) {
-    console.log('ID recibido para eliminación:', id); // 🔍 Verificar qué valor llega
+    console.log('ID recibido para eliminación:', id);
 
     if (!id || id === "undefined" || !mongoose.Types.ObjectId.isValid(id)) {
         console.error("ID inválido para eliminación:", id);
